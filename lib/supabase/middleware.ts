@@ -8,6 +8,14 @@ const PROTECTED_PREFIXES = ['/app', '/studio']
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
 
+  // Without Supabase env vars the whole site would 500 on every route
+  // (MIDDLEWARE_INVOCATION_FAILED). Degrade gracefully instead: let requests
+  // through with the auth gate disabled and a loud server-side log.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error('[middleware] Supabase env vars missing — auth gate disabled')
+    return response
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
