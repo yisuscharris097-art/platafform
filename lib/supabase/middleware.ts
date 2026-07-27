@@ -36,9 +36,14 @@ export async function updateSession(request: NextRequest) {
       },
     )
 
+    // Structural call on purpose: Vercel type-checks middleware in a SECOND
+    // pass with different module resolution that cannot follow the inherited
+    // GoTrueClient types through pnpm symlinks ("getUser does not exist on
+    // SupabaseAuthClient"). The runtime object is unaffected.
+    type AuthLike = { getUser(): Promise<{ data: { user: { id: string } | null } }> }
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await (supabase.auth as unknown as AuthLike).getUser()
 
     const path = request.nextUrl.pathname
     const isProtected = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))
