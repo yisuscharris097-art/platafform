@@ -13,6 +13,19 @@ const PROTECTED_PREFIXES = ['/app', '/studio']
  */
 export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname
+
+  // Demo mode (no Supabase env vars): no auth gate at all — the dashboard is
+  // open and /login is pointless, so send it home.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (path === '/login') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
+    return NextResponse.next({ request })
+  }
+
   const isProtected = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))
   if (!isProtected) return NextResponse.next({ request })
 

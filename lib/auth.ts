@@ -11,6 +11,11 @@ export interface SessionUser {
 
 /** Auth'd user + their app profile row, or null. */
 export async function getSessionUser(): Promise<SessionUser | null> {
+  // Without Supabase configured the whole app runs in demo mode as an owner.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    const { DEMO_USER } = await import('@/lib/demo')
+    return DEMO_USER
+  }
   // Fail-open to "not signed in": with missing/broken Supabase config the
   // pages redirect to /login instead of 500ing.
   try {

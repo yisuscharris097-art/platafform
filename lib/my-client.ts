@@ -10,6 +10,10 @@ export interface MyClient {
 
 /** The client row linked to the signed-in agent (portal_user_id), or null. */
 export async function getMyClient(): Promise<MyClient | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    const { DEMO_CLIENT } = await import('@/lib/demo')
+    return DEMO_CLIENT
+  }
   const supabase = await createClient()
   const {
     data: { user },
