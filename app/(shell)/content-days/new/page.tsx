@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { createContentDay } from '@/lib/mock/api'
+import { daysFromNow } from '@/lib/mock/dates'
 
 const field = 'mt-1 h-9 w-full rounded border border-border bg-bg px-3 text-13 transition focus:border-border-strong'
 
@@ -14,7 +15,7 @@ export default function NewContentDayPage() {
   const router = useRouter()
   const toast = useToast()
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ date: '2026-09-15', priceLabel: '', city: '', address: '', capacity: 16 })
+  const [form, setForm] = useState({ date: daysFromNow(21), priceLabel: '', city: '', address: '', capacity: 16 })
 
   const valid = form.date && form.priceLabel && form.city && form.address && form.capacity > 0
 

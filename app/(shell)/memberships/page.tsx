@@ -8,6 +8,7 @@ import { StatusPill } from '@/components/ui/status-pill'
 import { TableSkeleton } from '@/components/ui/skeleton'
 import { Table, TableWrap, THead, Th, Tr, Td } from '@/components/ui/table'
 import { getAgents, getContentDays } from '@/lib/mock/api'
+import { currentMonthPrefix } from '@/lib/mock/dates'
 import type { Agent, ContentDay } from '@/lib/mock/types'
 
 const PLANS = [
@@ -29,9 +30,15 @@ export default function MembershipsPage() {
   const members = agents?.filter((a) => a.status === 'member').slice(0, 20) ?? null
 
   function creditFor(a: Agent): { label: string; used: boolean } {
-    const used = days.find((d) => d.status === 'upcoming' && d.date.startsWith('2026-08') && d.bookedAgentIds.includes(a.id))
+    const used = days.find(
+      (d) =>
+        d.status === 'upcoming' &&
+        d.date !== null &&
+        d.date.startsWith(currentMonthPrefix()) &&
+        d.bookedAgentIds.includes(a.id),
+    )
     return used
-      ? { label: `Used on ${format(parseISO(used.date), 'MMM d')}`, used: true }
+      ? { label: `Used on ${format(parseISO(used.date ?? ''), 'MMM d')}`, used: true }
       : { label: '1 session available', used: false }
   }
 

@@ -1,5 +1,6 @@
 import type { Order, OrderStatus } from './types'
 import { AGENTS } from './agents'
+import { daysAgo } from './dates'
 
 const ITEMS: Array<[string, number]> = [
   ['Content Day session', 97],
@@ -16,14 +17,13 @@ function build(): Order[] {
   buyers.forEach((a, i) => {
     const [item, amount] = ITEMS[i % ITEMS.length] ?? ['Content Day session', 97]
     const status: OrderStatus = i % 11 === 10 ? 'failed' : i % 7 === 6 ? 'pending' : 'paid'
-    const day = 1 + ((i * 5) % 27)
     out.push({
       id: `o${1000 + i}`,
       agentId: a.id,
       agentName: a.name,
       item,
       amount: a.joinedAtCheckoutAmount && i % 3 === 0 ? a.joinedAtCheckoutAmount : amount,
-      date: `2026-${i % 2 === 0 ? '07' : '06'}-${String(day).padStart(2, '0')}`,
+      date: daysAgo(1 + ((i * 5) % 55)),
       status,
     })
   })

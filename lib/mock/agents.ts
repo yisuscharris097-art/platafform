@@ -1,4 +1,5 @@
 import type { Agent, MembershipStatus } from './types'
+import { daysAgo } from './dates'
 
 /** Brokerage from email domain — mirrors how the real ops sheet does it. */
 export function brokerageFromEmail(email: string): string {
@@ -62,9 +63,8 @@ function phone(i: number): string {
 }
 
 function lastSeen(i: number): string {
-  const day = 1 + ((i * 3) % 28)
-  const month = i % 2 === 0 ? '07' : '06'
-  return `2026-${month}-${String(day).padStart(2, '0')}`
+  // Spread activity across the trailing seven weeks, freshest first.
+  return daysAgo(1 + ((i * 3) % 49))
 }
 
 function build(): Agent[] {

@@ -28,17 +28,18 @@ const STAGES: QueueRow['stage'][] = ['awaiting upload', 'uploaded', 'in edit', '
 
 function buildQueue(days: ContentDay[]): QueueRow[] {
   return days
-    .filter((d) => d.status === 'completed')
+    .filter((d) => d.status === 'completed' && d.date !== null)
     .flatMap((d, i) => {
+      const date = d.date ?? ''
       const stage = STAGES[i % STAGES.length] ?? 'delivered'
       const hoursLate = i % 3 === 2 ? 6 + i * 3 : 0
       return {
         id: d.id,
-        date: d.date,
+        date,
         property: `${d.priceLabel} · ${d.city}`,
         shooter: SHOOTERS[i % SHOOTERS.length] ?? 'Peter',
-        uploadedAt: stage === 'awaiting upload' ? null : `${d.date}T2${i % 4}:15:00`,
-        dueAt: `${d.date}T20:00:00`,
+        uploadedAt: stage === 'awaiting upload' ? null : `${date}T2${i % 4}:15:00`,
+        dueAt: `${date}T20:00:00`,
         hoursLate,
         stage,
       }

@@ -2,7 +2,9 @@ export type ContentDayStatus = 'upcoming' | 'completed' | 'draft'
 
 export interface ContentDay {
   id: string
-  date: string // ISO yyyy-MM-dd
+  /** ISO yyyy-MM-dd, or null for drafts that have no date yet. */
+  date: string | null
+  startTime: string // "9:00 AM"
   priceLabel: string
   city: string
   address: string
@@ -66,12 +68,15 @@ export interface Order {
 }
 
 export interface Aggregates {
+  /** Checkout RECORDS flagged as member — the same person appears many times. */
   members: number
   nonMembers: number
   joinedAtCheckout: number
   needMoreInfo: number
   totalCheckIns: number
   totalCheckouts: number
+  /** Distinct people among the member records, deduped by normalized email. */
+  uniqueMembers: number
 }
 
 export type AttendanceStatus = 'booked' | 'checked-in' | 'no-show'

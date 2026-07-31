@@ -8,6 +8,7 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusPill } from '@/components/ui/status-pill'
 import { getAgent, getContentDays, getOrders } from '@/lib/mock/api'
+import { currentMonthPrefix } from '@/lib/mock/dates'
 import type { Agent, ContentDay, Order } from '@/lib/mock/types'
 
 interface TimelineItem {
@@ -41,15 +42,19 @@ export default function AgentProfilePage({ params }: { params: Promise<{ id: str
 
   const myOrders = orders.filter((o) => o.agentId === agent.id)
   const myDays = days.filter((d) => d.bookedAgentIds.includes(agent.id))
-  const usedThisPeriod = myDays.find((d) => d.status === 'upcoming' && d.date.startsWith('2026-08'))
+  const usedThisPeriod = myDays.find(
+    (d) => d.status === 'upcoming' && d.date !== null && d.date.startsWith(currentMonthPrefix()),
+  )
 
   const timeline: TimelineItem[] = [
-    ...myDays.map((d) => ({
-      icon: CalendarDays,
-      label: `${d.status === 'completed' ? 'Attended' : 'Booked'} — ${d.priceLabel} ${d.city}`,
-      sub: d.address,
-      date: d.date,
-    })),
+    ...myDays
+      .filter((d) => d.date !== null)
+      .map((d) => ({
+        icon: CalendarDays,
+        label: `${d.status === 'completed' ? 'Attended' : 'Booked'} — ${d.priceLabel} ${d.city}`,
+        sub: d.address,
+        date: d.date ?? '',
+      })),
     ...myOrders.map((o) => ({
       icon: ShoppingBag,
       label: o.item,
@@ -94,7 +99,7 @@ export default function AgentProfilePage({ params }: { params: Promise<{ id: str
             {agent.status === 'member' ? (
               <p className="mt-2 text-14">
                 {usedThisPeriod ? (
-                  <>Credit used on <span className="tnum text-gold">{format(parseISO(usedThisPeriod.date), 'MMM d')}</span></>
+                  <>Credit used on <span className="tnum text-gold">{format(parseISO(usedThisPeriod.date ?? ''), 'MMM d')}</span></>
                 ) : (
                   <><span className="text-gold">1 session</span> available this period</>
                 )}

@@ -91,7 +91,7 @@ export default function FieldDayPage({ params }: { params: Promise<{ contentDayI
             </p>
             <p className="text-13 text-dim">{day.address}</p>
             <p className="tnum mt-0.5 text-12 text-faint">
-              {format(parseISO(day.date), 'EEEE MMM d')} · {crewName(day.crew)} · {checkedIn}/{roster?.length ?? 0} in
+              {day.date ? format(parseISO(day.date), 'EEEE MMM d') : 'No date'} · {crewName(day.crew)} · {checkedIn}/{roster?.length ?? 0} in
             </p>
           </div>
         ) : (

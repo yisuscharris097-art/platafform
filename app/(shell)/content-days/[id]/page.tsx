@@ -11,8 +11,23 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { StatusPill } from '@/components/ui/status-pill'
 import { useToast } from '@/components/ui/toast'
 import { getAgents, getContentDay, updateContentDay } from '@/lib/mock/api'
-import { crewName } from '@/lib/mock/crews'
+import { isToday } from '@/lib/mock/dates'
+import { crewName, CREWS } from '@/lib/mock/crews'
 import type { Agent, ContentDay } from '@/lib/mock/types'
+
+const field = 'mt-1 h-9 w-full rounded border border-border bg-bg px-3 text-13 transition focus:border-border-strong'
+
+interface Draft {
+  address: string
+  date: string
+  startTime: string
+}
+
+interface Change {
+  label: string
+  from: string
+  to: string
+}
 
 export default function ContentDayDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -20,13 +35,13 @@ export default function ContentDayDetailPage({ params }: { params: Promise<{ id:
   const toast = useToast()
   const [day, setDay] = useState<ContentDay | null>(null)
   const [agents, setAgents] = useState<Agent[]>([])
-  const [addressDraft, setAddressDraft] = useState('')
+  const [draft, setDraft] = useState<Draft>({ address: '', date: '', startTime: '' })
   const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
     getContentDay(id).then((d) => {
       setDay(d)
-      if (d) setAddressDraft(d.address)
+      if (d) setDraft({ address: d.address, date: d.date ?? '', startTime: d.startTime })
     })
     getAgents().then(setAgents)
   }, [id])
@@ -41,30 +56,50 @@ export default function ContentDayDetailPage({ params }: { params: Promise<{ id:
     )
   }
 
+  const changes: Change[] = []
+  if (draft.address.trim() !== day.address) changes.push({ label: 'Address', from: day.address, to: draft.address.trim() })
+  if (draft.date !== (day.date ?? '')) {
+    changes.push({
+      label: 'Date',
+      from: day.date ? format(parseISO(day.date), 'EEE MMM d, yyyy') : 'not set',
+      to: draft.date ? format(parseISO(draft.date), 'EEE MMM d, yyyy') : 'not set',
+    })
+  }
+  if (draft.startTime.trim() !== day.startTime) changes.push({ label: 'Start time', from: day.startTime, to: draft.startTime.trim() })
+
+  const crew = CREWS.find((c) => c.id === day.crew)
   const booked = day.bookedAgentIds
     .map((aid) => agents.find((a) => a.id === aid))
     .filter((a): a is Agent => Boolean(a))
   const occupancy = Math.round((day.booked / day.capacity) * 100)
-  const addressChanged = addressDraft.trim() !== day.address
 
-  async function saveAddress() {
+  function discard() {
     if (!day) return
+    setDraft({ address: day.address, date: day.date ?? '', startTime: day.startTime })
+  }
+
+  async function save() {
+    if (!day) return
+    const summary = changes.map((c) => `${c.label.toLowerCase()} → ${c.to}`).join(', ')
+    const notified = day.booked + (crew?.members.length ?? 0)
     const updated = await updateContentDay(day.id, {
-      address: addressDraft.trim(),
+      address: draft.address.trim(),
+      date: draft.date === '' ? null : draft.date,
+      startTime: draft.startTime.trim(),
       history: [
         {
-          id: `h${Date.now()}`,
+          id: `h${day.history.length + 1}-${day.id}`,
           at: new Date().toISOString(),
           who: 'Joe',
-          what: `Address changed to ${addressDraft.trim()}`,
-          notified: day.booked + 1,
+          what: `Changed ${summary}`,
+          notified,
         },
         ...day.history,
       ],
     })
     setDay(updated ? { ...updated } : day)
     setConfirming(false)
-    toast(`Address updated — ${day.booked} agents and ${crewName(day.crew)} notified`)
+    toast(`Saved — ${day.booked} agents and ${crewName(day.crew)} notified`)
   }
 
   return (
@@ -77,25 +112,38 @@ export default function ContentDayDetailPage({ params }: { params: Promise<{ id:
         <h1 className="text-20 font-medium">
           <span className="text-gold">{day.priceLabel}</span> · {day.city}
         </h1>
-        <StatusPill status={day.status} />
-        <span className="tnum ml-auto text-13 text-dim">{format(parseISO(day.date), 'EEEE, MMMM d, yyyy')}</span>
+        <StatusPill status={isToday(day.date) ? 'member' : day.status} label={isToday(day.date) ? 'in progress' : day.status} />
+        <span className="tnum ml-auto text-13 text-dim">
+          {day.date ? `${format(parseISO(day.date), 'EEEE, MMMM d, yyyy')} · ${day.startTime}` : 'No date set'}
+        </span>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardTitle>Property</CardTitle>
-          <label className="mt-3 block text-12 text-faint" htmlFor="address">Address</label>
-          <div className="mt-1 flex flex-col gap-2 sm:flex-row">
-            <input
-              id="address"
-              value={addressDraft}
-              onChange={(e) => setAddressDraft(e.target.value)}
-              className="h-9 flex-1 rounded border border-border bg-bg px-3 text-13 transition focus:border-border-strong"
-            />
-            <Button variant="primary" size="md" disabled={!addressChanged} onClick={() => setConfirming(true)}>
-              Save address
-            </Button>
+          <CardTitle>Property and schedule</CardTitle>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className="text-12 text-faint" htmlFor="address">Address</label>
+              <input id="address" value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} className={field} />
+            </div>
+            <div>
+              <label className="text-12 text-faint" htmlFor="date">Date</label>
+              <input id="date" type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} className={field} />
+            </div>
+            <div>
+              <label className="text-12 text-faint" htmlFor="time">Start time</label>
+              <input id="time" value={draft.startTime} onChange={(e) => setDraft({ ...draft, startTime: e.target.value })} className={field} />
+            </div>
           </div>
+          {changes.length > 0 ? (
+            <div className="mt-4 flex items-center gap-2 rounded border border-warn/40 bg-warn/10 px-3 py-2.5">
+              <p className="flex-1 text-13 text-warn">
+                {changes.length === 1 ? '1 unsaved change' : `${changes.length} unsaved changes`} — nothing is sent until you review
+              </p>
+              <Button variant="ghost" size="sm" onClick={discard}>Discard</Button>
+              <Button variant="primary" size="sm" onClick={() => setConfirming(true)}>Review and save</Button>
+            </div>
+          ) : null}
 
           <div className="mt-5">
             <div className="flex items-center justify-between text-13">
@@ -123,7 +171,7 @@ export default function ContentDayDetailPage({ params }: { params: Promise<{ id:
                       {a.name.split(' ').map((w) => w[0]).join('').slice(0, 2)}
                     </span>
                     <span className="text-13">{a.name}</span>
-                    <span className="text-12 text-faint">{a.brokerage}</span>
+                    <span className="hidden text-12 text-faint sm:inline">{a.brokerage}</span>
                     <StatusPill className="ml-auto" status={a.status} />
                   </li>
                 ))}
@@ -136,7 +184,18 @@ export default function ContentDayDetailPage({ params }: { params: Promise<{ id:
           <Card>
             <CardTitle>Crew</CardTitle>
             <p className="mt-2 text-14">{crewName(day.crew)}</p>
-            {!day.crew ? <p className="mt-1 text-12 text-danger">Needs assignment — see the crews board</p> : null}
+            {crew ? (
+              <ul className="mt-2 space-y-1">
+                {crew.members.map((m) => (
+                  <li key={m.name + m.role} className="flex justify-between text-12">
+                    <span className="text-dim">{m.name}</span>
+                    <span className="text-faint">{m.role}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-12 text-danger">Needs assignment — see the crews board</p>
+            )}
           </Card>
 
           <Card>
@@ -182,15 +241,31 @@ export default function ContentDayDetailPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
-      <Modal open={confirming} onClose={() => setConfirming(false)} title="Confirm address change">
-        <p className="text-13 text-dim">
-          Changing the address will notify <span className="font-medium text-text">{day.booked} booked agents</span> and{' '}
-          <span className="font-medium text-text">{crewName(day.crew)}</span> immediately.
-        </p>
-        <p className="mt-3 rounded border border-border bg-bg px-3 py-2 text-13">{addressDraft.trim()}</p>
+      <Modal open={confirming} onClose={() => setConfirming(false)} title="Review before sending">
+        <div className="space-y-2">
+          {changes.map((c) => (
+            <div key={c.label} className="rounded border border-border bg-bg px-3 py-2">
+              <p className="text-12 text-faint">{c.label}</p>
+              <p className="text-13"><span className="text-faint line-through">{c.from}</span></p>
+              <p className="text-13 text-text">{c.to}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 rounded border border-warn/40 bg-warn/10 p-3 text-13 text-dim">
+          <p>
+            Saving will immediately notify{' '}
+            <span className="font-medium text-text">{day.booked} booked agents</span> by text and email
+            {crew ? (
+              <>
+                {' '}and re-route <span className="font-medium text-text">{crew.name} ({crew.members.length} people)</span>
+              </>
+            ) : null}
+            . The host will be asked to confirm access{draft.date !== (day.date ?? '') ? ' for the new date' : ''}.
+          </p>
+        </div>
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setConfirming(false)}>Cancel</Button>
-          <Button variant="primary" onClick={() => void saveAddress()}>Save and notify</Button>
+          <Button variant="ghost" onClick={() => setConfirming(false)}>Keep editing</Button>
+          <Button variant="primary" onClick={() => void save()}>Save and notify {day.booked + (crew?.members.length ?? 0)} people</Button>
         </div>
       </Modal>
     </div>

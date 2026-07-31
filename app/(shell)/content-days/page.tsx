@@ -10,6 +10,7 @@ import { TableSkeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Table, TableWrap, THead, Th, Tr, Td } from '@/components/ui/table'
 import { getContentDays } from '@/lib/mock/api'
+import { isToday } from '@/lib/mock/dates'
 import { crewName } from '@/lib/mock/crews'
 import type { ContentDay, ContentDayStatus } from '@/lib/mock/types'
 import { cn } from '@/lib/cn'
@@ -33,9 +34,11 @@ export default function ContentDaysPage() {
   const rows = useMemo(() => {
     if (!days) return null
     const filtered = filter === 'all' ? days : days.filter((d) => d.status === filter)
-    // Soonest first — upcoming ascending, then drafts, completed last.
+    // Soonest first — upcoming ascending, then undated drafts, completed last.
     const order: Record<ContentDayStatus, number> = { upcoming: 0, draft: 1, completed: 2 }
-    return [...filtered].sort((a, b) => order[a.status] - order[b.status] || a.date.localeCompare(b.date))
+    return [...filtered].sort(
+      (a, b) => order[a.status] - order[b.status] || (a.date ?? '9999').localeCompare(b.date ?? '9999'),
+    )
   }, [days, filter])
 
   return (
@@ -78,7 +81,9 @@ export default function ContentDaysPage() {
             <tbody>
               {rows.map((d) => (
                 <Tr key={d.id} onClick={() => router.push(`/content-days/${d.id}`)}>
-                  <Td className="tnum text-dim">{format(parseISO(d.date), 'MMM d, yyyy')}</Td>
+                  <Td className="tnum text-dim">
+                    {isToday(d.date) ? <span className="font-medium text-gold">Today</span> : d.date ? format(parseISO(d.date), 'MMM d, yyyy') : 'No date'}
+                  </Td>
                   <Td>
                     <span className="font-medium text-gold">{d.priceLabel}</span>
                     <span className="ml-2 hidden text-dim lg:inline">{d.address}</span>
@@ -86,7 +91,12 @@ export default function ContentDaysPage() {
                   <Td>{d.city}</Td>
                   <Td className="tnum">{d.booked} / {d.capacity}</Td>
                   <Td className="text-dim">{crewName(d.crew)}</Td>
-                  <Td><StatusPill status={d.status} /></Td>
+                  <Td>
+                    <StatusPill
+                      status={isToday(d.date) ? 'member' : d.status}
+                      label={isToday(d.date) ? 'in progress' : d.status}
+                    />
+                  </Td>
                 </Tr>
               ))}
             </tbody>

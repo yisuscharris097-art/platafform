@@ -7,11 +7,12 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
 import { getContentDays, getCrews, updateContentDay } from '@/lib/mock/api'
+import { daysFromNow } from '@/lib/mock/dates'
 import type { ContentDay, Crew } from '@/lib/mock/types'
 import { cn } from '@/lib/cn'
 
-/** First week of August 2026, the demo's hot week. */
-const WEEK = ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07']
+/** The current week, computed at runtime so the board is always live. */
+const WEEK = Array.from({ length: 5 }, (_, i) => daysFromNow(i))
 
 export default function CrewsPage() {
   const router = useRouter()
@@ -25,7 +26,7 @@ export default function CrewsPage() {
     getContentDays().then(setDays)
   }, [])
 
-  const weekDays = useMemo(() => days?.filter((d) => WEEK.includes(d.date)) ?? [], [days])
+  const weekDays = useMemo(() => days?.filter((d) => d.date !== null && WEEK.includes(d.date)) ?? [], [days])
   const unassigned = useMemo(
     () => days?.filter((d) => d.status === 'upcoming' && d.crew === null) ?? [],
     [days],
@@ -50,7 +51,7 @@ export default function CrewsPage() {
         <table className="w-full min-w-[640px] text-13">
           <thead>
             <tr className="border-b border-border text-12 text-faint">
-              <th className="w-24 px-4 py-3 text-left font-normal">Week of Aug 3</th>
+              <th className="w-24 px-4 py-3 text-left font-normal">This week</th>
               {WEEK.map((d) => (
                 <th key={d} className="px-3 py-3 text-left font-normal">{format(parseISO(d), 'EEE d')}</th>
               ))}
@@ -119,7 +120,7 @@ export default function CrewsPage() {
                 )}
               >
                 <p className="text-13 font-medium">{d.priceLabel} · {d.city}</p>
-                <p className="tnum text-12 text-dim">{format(parseISO(d.date), 'EEE MMM d')} · {d.booked} booked</p>
+                <p className="tnum text-12 text-dim">{d.date ? format(parseISO(d.date), 'EEE MMM d') : 'No date'} · {d.booked} booked</p>
               </div>
             ))}
           </div>

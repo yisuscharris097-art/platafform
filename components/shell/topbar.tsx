@@ -7,9 +7,9 @@ import { Bell, Search } from 'lucide-react'
 import { NAV } from './nav'
 
 const ALERTS = [
-  { label: 'Wellington Aug 7 has no crew assigned', href: '/content-days/cd5' },
-  { label: 'Lake Worth Aug 21 has no crew assigned', href: '/content-days/cd9' },
-  { label: 'Host requirements missing for Hollywood Aug 12', href: '/content-days/cd6' },
+  { label: 'Wellington ($4.7M) has no crew assigned', href: '/content-days/cd5' },
+  { label: 'Lake Worth ($6.5M) has no crew assigned', href: '/content-days/cd9' },
+  { label: 'Host requirements missing — Hollywood', href: '/content-days/cd6' },
 ]
 
 function titleFor(pathname: string): string {

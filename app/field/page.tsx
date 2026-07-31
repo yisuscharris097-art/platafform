@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getContentDays } from '@/lib/mock/api'
+import { isToday } from '@/lib/mock/dates'
 import { crewName } from '@/lib/mock/crews'
 import type { ContentDay } from '@/lib/mock/types'
 
@@ -50,7 +51,7 @@ export default function FieldHomePage() {
                 </p>
                 <p className="truncate text-13 text-dim">{d.address}</p>
                 <p className="tnum mt-1 text-12 text-faint">
-                  {format(parseISO(d.date), 'EEE MMM d')} · {d.booked} booked · {crewName(d.crew)}
+                  {isToday(d.date) ? 'Today' : d.date ? format(parseISO(d.date), 'EEE MMM d') : 'No date'} · {d.booked} booked · {crewName(d.crew)}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 shrink-0 text-faint" strokeWidth={1.5} />
