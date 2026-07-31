@@ -3,11 +3,87 @@
 @tailwind utilities;
 
 :root {
-  --background: 40 20% 98%;
-  --foreground: 0 0% 8%;
-  --muted: 40 10% 94%;
-  --muted-foreground: 0 0% 40%;
-  --border: 40 8% 88%;
-  --primary: 0 0% 8%;
-  --primary-foreground: 0 0% 100%;
+  --bg: #0a0a0a;
+  --surface: #131313;
+  --surface-raised: #1a1a1a;
+  --border: #262626;
+  --border-strong: #383838;
+
+  --text: #f2f1ec;
+  --text-dim: #9e9c95;
+  --text-faint: #63615c;
+
+  /* Exact gold sampled from luxecontentdays.com */
+  --gold: #bba15c;
+  --gold-dim: #8a7538;
+  --gold-wash: rgba(187, 161, 92, 0.1);
+
+  --success: #4ea574;
+  --warn: #d9964a;
+  --danger: #c4574f;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--gold-wash);
+    color: var(--text);
+  }
+  *:focus-visible {
+    outline: 1px solid var(--gold);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+  ::placeholder {
+    color: var(--text-faint);
+  }
+}
+
+@layer utilities {
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Scrollbars that belong in the room */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
